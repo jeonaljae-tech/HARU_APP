@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Haru - Aesthetic Bento Diary & Shelf</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="manifest" href="manifest.json">
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="app-header">
+        <div>
+            <div class="greeting-row">
+                <span id="dynamic-greeting" class="greeting-badge">Good Morning 🌅</span>
+                <span id="live-clock" class="clock-pill">00:00 AM</span>
+            </div>
+            <h1 onclick="openProfileModal()" class="user-title">
+                <span id="display-user-name">Shar Thet Han</span> ✨
+            </h1>
+        </div>
+        
+        <div class="header-actions">
+            <button onclick="toggleTheme()" id="theme-toggle-btn" title="Switch Light / Night Mode" class="icon-circle-btn">
+                <i data-lucide="moon" id="theme-icon" class="icon-sm"></i>
+            </button>
+            <button onclick="openBackupModal()" title="Backup & Restore" class="icon-circle-btn">
+                <i data-lucide="database" class="icon-sm"></i>
+            </button>
+            <button onclick="openProfileModal()" title="Edit Profile" class="avatar-btn">
+                <div id="avatar-fallback" class="avatar-fallback">S</div>
+                <img id="avatar-img" src="" alt="Profile" class="avatar-img hidden">
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="main-container">
+
+        <!-- Minimalist Korean Journal Date Bar -->
+        <section class="bento-card date-bar">
+            <div class="date-display-group">
+                <i data-lucide="calendar" class="icon-sm text-periwinkle"></i>
+                <span id="calendar-date-display" class="date-label">Date</span>
+            </div>
+            <div class="date-controls">
+                <input type="date" id="selected-date" onchange="onDateChange()" class="soft-input date-input">
+                <button onclick="jumpToToday()" class="pill-btn btn-lavender">Today</button>
+            </div>
+        </section>
+
+        <!-- Today's Special & Memories -->
+        <section class="bento-card memory-card">
+            <div class="card-header">
+                <span class="card-title text-periwinkle">✨ Today's Special & Memories</span>
+                <i data-lucide="sparkles" class="icon-sm text-pink"></i>
+            </div>
+            <textarea id="memory-text" oninput="saveCurrentDayData()" placeholder="What made today special? Write your memories here..." class="soft-textarea"></textarea>
+            
+            <div class="memory-footer">
+                <label class="upload-pill-btn">
+                    <i data-lucide="image" class="icon-sm"></i>
+                    <span>Add Photos</span>
+                    <input type="file" accept="image/*" multiple class="hidden" onchange="handleMultipleImages(event)">
+                </label>
+                <span id="photo-count-status" class="muted-caption">0 photos added</span>
+            </div>
+            <div id="facebook-photo-grid" class="photo-grid"></div>
+        </section>
+
+        <!-- Song of the Day -->
+        <section class="bento-card song-card">
+            <div class="card-header">
+                <span class="card-title text-blue">Song of the Day</span>
+                <div class="pulse-badge">
+                    <i data-lucide="music" class="icon-xs text-blue"></i>
+                </div>
+            </div>
+            <div class="two-col-inputs">
+                <input type="text" id="song-title-input" oninput="saveCurrentDayData()" placeholder="🎵 Song title..." class="soft-input">
+                <input type="text" id="song-artist-input" oninput="saveCurrentDayData()" placeholder="🎤 Artist name..." class="soft-input">
+            </div>
+            <p id="song-display-status" class="song-status">No track logged yet</p>
+        </section>
+
+        <!-- 2-Column Bento Grid -->
+        <div class="bento-grid">
+
+            <!-- To-Do List -->
+            <section class="bento-card grid-card-1 flex-col-between">
+                <div>
+                    <div class="card-header">
+                        <span class="card-title text-peach">To-Do List</span>
+                        <i data-lucide="check-circle-2" class="icon-sm text-peach"></i>
+                    </div>
+                    <div id="todo-container" class="item-list"></div>
+                </div>
+                <div class="inline-add-row">
+                    <input type="text" id="todo-input" placeholder="Add task..." class="soft-input">
+                    <button onclick="addTodo()" class="square-add-btn btn-peach">
+                        <i data-lucide="plus" class="icon-xs"></i>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Meals & Food -->
+            <section class="bento-card grid-card-2 flex-col-between">
+                <div>
+                    <div class="card-header">
+                        <span class="card-title text-mint">Meals & Food</span>
+                        <i data-lucide="utensils" class="icon-sm text-mint"></i>
+                    </div>
+                    <div id="meal-container" class="item-list"></div>
+                </div>
+                <div class="stack-add-group">
+                    <input type="text" id="meal-input" placeholder="What did you eat?" class="soft-input">
+                    <div class="meal-action-row">
+                        <label class="mini-upload-btn">
+                            <i data-lucide="camera" class="icon-xs"></i>
+                            <span id="meal-photo-label">Photo</span>
+                            <input type="file" accept="image/*" id="meal-photo-input" class="hidden">
+                        </label>
+                        <button onclick="addMeal()" class="mini-save-btn btn-mint">Add</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Podcasts -->
+            <section class="bento-card grid-card-3 flex-col-between">
+                <div>
+                    <div class="card-header">
+                        <span class="card-title text-periwinkle">Podcasts</span>
+                        <i data-lucide="headphones" class="icon-sm text-periwinkle"></i>
+                    </div>
+                    <div id="podcast-container" class="item-list"></div>
+                </div>
+                <div class="inline-add-row">
+                    <input type="text" id="podcast-input" placeholder="Podcast..." class="soft-input">
+                    <button onclick="addPodcast()" class="square-add-btn btn-periwinkle">
+                        <i data-lucide="plus" class="icon-xs"></i>
+                    </button>
+                </div>
+            </section>
+
+            <!-- Today's Book -->
+            <section class="bento-card grid-card-4 flex-col-between">
+                <div>
+                    <div class="card-header">
+                        <span class="card-title text-blue">Today's Book</span>
+                        <i data-lucide="book-open" class="icon-sm text-blue"></i>
+                    </div>
+                    <p id="today-book-text" class="muted-body-text">No book logged for today.</p>
+                </div>
+                <button onclick="openBookModal()" class="full-btn btn-blue">Add to Shelf 📚</button>
+            </section>
+
+        </div>
+
+        <!-- Book Shelf Collection -->
+        <section class="bento-card shelf-section">
+            <div class="card-header">
+                <h3 class="shelf-heading">
+                    <i data-lucide="library" class="icon-sm text-periwinkle"></i>
+                    <span>My Book Shelf Collection</span>
+                </h3>
+                <span id="book-count" class="count-badge">0 books</span>
+            </div>
+            <div class="search-wrapper">
+                <i data-lucide="search" class="icon-xs search-icon"></i>
+                <input type="text" id="book-search-input" oninput="renderBooks()" placeholder="Search books by title or author..." class="soft-input search-input">
+            </div>
+            <div id="book-grid" class="book-grid"></div>
+        </section>
+
+    </main>
+
+    <!-- Backup & Restore Modal -->
+    <div id="backup-modal" onclick="if(event.target === this) closeBackupModal()" class="modal-backdrop hidden">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 class="modal-title">
+                    <i data-lucide="database" class="icon-sm text-periwinkle"></i>
+                    <span>Backup & Restore Data</span>
+                </h3>
+                <button onclick="closeBackupModal()" class="close-btn"><i data-lucide="x" class="icon-md"></i></button>
+            </div>
+            <p class="modal-desc">သင်၏ Diary မှတ်တမ်းများ၊ ပုံများ၊ စာအုပ်များနှင့် Profile အချက်အလက်အားလုံးကို ဖိုင်ထုတ်ယူသိမ်းဆည်းနိုင်ပြီး၊ ယခင်ထုတ်ထားသောဖိုင်ဖြင့် ပြန်လည်ဖော်ယူနိုင်ပါသည်။</p>
+            <div class="modal-actions-col">
+                <button onclick="exportBackupFile()" class="full-btn btn-periwinkle flex-center-gap">
+                    <i data-lucide="download" class="icon-sm"></i>
+                    <span>Export Backup File (.json)</span>
+                </button>
+                <label class="full-btn btn-soft flex-center-gap cursor-pointer">
+                    <i data-lucide="upload" class="icon-sm text-periwinkle"></i>
+                    <span>Import & Restore File</span>
+                    <input type="file" accept=".json" class="hidden" onchange="importBackupFile(event)">
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Book Detail Modal -->
+    <div id="book-detail-modal" onclick="if(event.target === this) closeBookDetailModal()" class="modal-backdrop hidden">
+        <div class="modal-box scrollable-modal">
+            <div class="modal-header">
+                <span id="detail-book-date" class="count-badge"></span>
+                <button onclick="closeBookDetailModal()" class="close-btn"><i data-lucide="x" class="icon-md"></i></button>
+            </div>
+            <div class="book-detail-hero">
+                <div class="detail-cover-frame">
+                    <img id="detail-book-img" src="" alt="Book Cover" class="cover-fill hidden">
+                    <i data-lucide="book" class="icon-lg text-muted" id="detail-book-icon"></i>
+                </div>
+                <h2 id="detail-book-title" class="detail-title"></h2>
+                <p id="detail-book-author" class="detail-author"></p>
+                <div id="detail-book-rating" class="star-display"></div>
+            </div>
+            <div class="notes-box">
+                <span class="notes-label">Key Takeaways & Notes</span>
+                <p id="detail-book-notes" class="notes-content"></p>
+            </div>
+            <div class="two-col-btns">
+                <button onclick="openEditBookModalFromDetail()" class="full-btn btn-periwinkle">Edit Book ✏️</button>
+                <button onclick="deleteBookFromDetail()" class="full-btn btn-danger-soft">Remove</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add / Edit Book Modal -->
+    <div id="book-modal" onclick="if(event.target === this) closeBookModal()" class="modal-backdrop hidden">
+        <div class="modal-box scrollable-modal">
+            <div class="modal-header">
+                <h3 id="book-modal-title" class="modal-title">Add Book & Cover Photo</h3>
+                <button onclick="closeBookModal()" class="close-btn"><i data-lucide="x" class="icon-md"></i></button>
+            </div>
+            <div class="cover-upload-row">
+                <div class="mini-cover-frame">
+                    <img id="new-book-cover-preview" src="" class="cover-fill hidden">
+                    <i data-lucide="image" class="icon-md text-muted" id="new-book-cover-icon"></i>
+                </div>
+                <label class="upload-pill-btn">
+                    Upload Cover Photo
+                    <input type="file" accept="image/*" id="new-book-cover-input" class="hidden" onchange="handleBookCoverUpload(event)">
+                </label>
+            </div>
+            <input type="text" id="book-title" placeholder="Book Title" class="soft-input">
+            <input type="text" id="book-author" placeholder="Author Name" class="soft-input">
+            <div>
+                <label class="field-label">Rating (1 to 5 Stars)</label>
+                <div class="star-picker" id="rating-stars-input">
+                    <button type="button" onclick="setBookRating(1)" class="star-btn active" data-val="1">★</button>
+                    <button type="button" onclick="setBookRating(2)" class="star-btn active" data-val="2">★</button>
+                    <button type="button" onclick="setBookRating(3)" class="star-btn active" data-val="3">★</button>
+                    <button type="button" onclick="setBookRating(4)" class="star-btn active" data-val="4">★</button>
+                    <button type="button" onclick="setBookRating(5)" class="star-btn active" data-val="5">★</button>
+                </div>
+            </div>
+            <textarea id="book-notes" placeholder="Key takeaways / notes from this book..." class="soft-textarea"></textarea>
+            <div class="two-col-btns">
+                <button onclick="closeBookModal()" class="full-btn btn-soft">Cancel</button>
+                <button onclick="saveBook()" class="full-btn btn-periwinkle">Save Book</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div id="profile-modal" onclick="if(event.target === this) closeProfileModal()" class="modal-backdrop hidden">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3 class="modal-title">Edit User Profile ✨</h3>
+                <button onclick="closeProfileModal()" class="close-btn"><i data-lucide="x" class="icon-md"></i></button>
+            </div>
+            <div class="profile-preview-col">
+                <div class="large-avatar-frame">
+                    <img id="modal-avatar-preview" src="" alt="Preview" class="cover-fill hidden">
+                    <span id="modal-avatar-letter" class="large-avatar-letter">S</span>
+                </div>
+                <div class="profile-photo-actions">
+                    <label class="upload-pill-btn">
+                        Change Photo
+                        <input type="file" accept="image/*" class="hidden" onchange="handleProfilePhotoUpload(event)">
+                    </label>
+                    <button onclick="removeProfilePhoto()" class="text-remove-btn">Remove</button>
+                </div>
+            </div>
+            <div>
+                <label class="field-label">Display Name / Nickname</label>
+                <input type="text" id="profile-name-input" placeholder="Enter your name..." class="soft-input">
+            </div>
+            <div class="two-col-btns">
+                <button onclick="closeProfileModal()" class="full-btn btn-soft">Cancel</button>
+                <button onclick="saveProfile()" class="full-btn btn-periwinkle">Save Profile</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Theme (Light / Night Mode) Management
+        function applyTheme(theme) {
+            const isDark = theme === 'dark';
+            document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+            const btn = document.getElementById('theme-toggle-btn');
+            if (btn) {
+                btn.innerHTML = isDark
+                    ? '<i data-lucide="sun" class="icon-sm"></i>'
+                    : '<i data-lucide="moon" class="icon-sm"></i>';
+                if (window.lucide) lucide.createIcons();
+            }
+        }
+
+        function toggleTheme() {
+            const current = document.documentElement.getAttribute('data-theme') || 'light';
+            const next = current === 'dark' ? 'light' : 'dark';
+            localStorage.setItem('haru_theme_mode', next);
+            applyTheme(next);
+        }
+
+        const savedTheme = localStorage.getItem('haru_theme_mode') || 'light';
+        applyTheme(savedTheme);
+
+        // Close modals with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeBackupModal();
+                closeBookDetailModal();
+                closeBookModal();
+                closeProfileModal();
+            }
+        });
+
+        // Real-time Clock & Greeting
+        function updateClockAndGreeting() {
+            const now = new Date();
+            const hour = now.getHours();
+            const greetingEl = document.getElementById('dynamic-greeting');
+            if (hour < 12) greetingEl.innerText = "Good Morning 🌅";
+            else if (hour < 17) greetingEl.innerText = "Good Afternoon ☀️";
+            else greetingEl.innerText = "Good Evening 🌙";
+            document.getElementById('live-clock').innerText = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        }
+        updateClockAndGreeting();
+        setInterval(updateClockAndGreeting, 1000);
+
+        // User Profile State
+        let userProfile = JSON.parse(localStorage.getItem('korea_user_profile')) || { name: 'Shar Thet Han', avatar: '' };
+        let tempAvatar = '';
+
+        function renderProfile() {
+            document.getElementById('display-user-name').innerText = userProfile.name;
+            const firstLetter = (userProfile.name.trim()[0] || 'U').toUpperCase();
+            const avatarImg = document.getElementById('avatar-img');
+            const avatarFallback = document.getElementById('avatar-fallback');
+            if (userProfile.avatar) {
+                avatarImg.src = userProfile.avatar;
+                avatarImg.classList.remove('hidden');
+                avatarFallback.classList.add('hidden');
+            } else {
+                avatarImg.classList.add('hidden');
+                avatarFallback.classList.remove('hidden');
+                avatarFallback.innerText = firstLetter;
+            }
+        }
+
+        function openProfileModal() {
+            document.getElementById('profile-name-input').value = userProfile.name;
+            tempAvatar = userProfile.avatar;
+            updateModalAvatarPreview();
+            document.getElementById('profile-modal').classList.remove('hidden');
+        }
+        function closeProfileModal() { document.getElementById('profile-modal').classList.add('hidden'); }
+
+        function updateModalAvatarPreview() {
+            const previewImg = document.getElementById('modal-avatar-preview');
+            const previewLetter = document.getElementById('modal-avatar-letter');
+            const nameVal = document.getElementById('profile-name-input').value || userProfile.name;
+            if (tempAvatar) {
+                previewImg.src = tempAvatar;
+                previewImg.classList.remove('hidden');
+                previewLetter.classList.add('hidden');
+            } else {
+                previewImg.classList.add('hidden');
+                previewLetter.classList.remove('hidden');
+                previewLetter.innerText = (nameVal.trim()[0] || 'U').toUpperCase();
+            }
+        }
+
+        function handleProfilePhotoUpload(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) { tempAvatar = event.target.result; updateModalAvatarPreview(); }
+                reader.readAsDataURL(file);
+            }
+        }
+        function removeProfilePhoto() { tempAvatar = ''; updateModalAvatarPreview(); }
+        function saveProfile() {
+            const newName = document.getElementById('profile-name-input').value.trim();
+            if (newName) userProfile.name = newName;
+            userProfile.avatar = tempAvatar;
+            localStorage.setItem('korea_user_profile', JSON.stringify(userProfile));
+            renderProfile();
+            closeProfileModal();
+        }
+
+        // Date Picker & Journal Management
+        const todayStr = new Date().toISOString().split('T')[0];
+        document.getElementById('selected-date').value = todayStr;
+
+        let db = JSON.parse(localStorage.getItem('korea_planner_db')) || {};
+        let booksDb = JSON.parse(localStorage.getItem('korea_books_db')) || [];
+        let currentTempMealPhoto = '';
+        let currentTempBookCover = '';
+        let activeDetailBookId = null;
+        let editingBookId = null;
+        let currentBookRating = 5;
+
+        function getDateKey() { return document.getElementById('selected-date').value || todayStr; }
+        function getCurrentDayData() {
+            const key = getDateKey();
+            if (!db[key]) {
+                db[key] = { memory: '', photos: [], songTitle: '', songArtist: '', todos: [], meals: [], podcasts: [], bookTitle: '' };
+            }
+            if(!db[key].photos) db[key].photos = [];
+            return db[key];
+        }
+
+        function loadDayUI() {
+            const data = getCurrentDayData();
+            document.getElementById('memory-text').value = data.memory || '';
+            document.getElementById('song-title-input').value = data.songTitle || '';
+            document.getElementById('song-artist-input').value = data.songArtist || '';
+            
+            const parts = getDateKey().split('-');
+            const dateObj = new Date(parts[0], parts[1] - 1, parts[2]);
+            const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
+            document.getElementById('calendar-date-display').innerText = dateObj.toLocaleDateString(undefined, options);
+
+            updateSongStatus(data.songTitle, data.songArtist);
+            renderProfile();
+            renderPhotos();
+            renderTodos();
+            renderMeals();
+            renderPodcasts();
+            renderTodayBook();
+            renderBooks();
+            if (window.lucide) lucide.createIcons();
+        }
+
+        function onDateChange() { loadDayUI(); }
+        function jumpToToday() {
+            document.getElementById('selected-date').value = todayStr;
+            loadDayUI();
+        }
+
+        function saveCurrentDayData() {
+            const data = getCurrentDayData();
+            data.memory = document.getElementById('memory-text').value;
+            data.songTitle = document.getElementById('song-title-input').value;
+            data.songArtist = document.getElementById('song-artist-input').value;
+            updateSongStatus(data.songTitle, data.songArtist);
+            db[getDateKey()] = data;
+            localStorage.setItem('korea_planner_db', JSON.stringify(db));
+        }
+
+        function updateSongStatus(title, artist) {
+            const statusEl = document.getElementById('song-display-status');
+            if (title && artist) statusEl.innerText = `Now playing: ${title} - ${artist}`;
+            else if (title) statusEl.innerText = `Now playing: ${title}`;
+            else statusEl.innerText = 'No track logged yet';
+        }
+
+        // Photos
+        function handleMultipleImages(e) {
+            const files = e.target.files;
+            if(!files || files.length === 0) return;
+            const data = getCurrentDayData();
+            let loadedCount = 0;
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    data.photos.push(event.target.result);
+                    loadedCount++;
+                    if(loadedCount === files.length) { saveCurrentDayData(); loadDayUI(); }
+                }
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function renderPhotos() {
+            const data = getCurrentDayData();
+            const container = document.getElementById('facebook-photo-grid');
+            const status = document.getElementById('photo-count-status');
+            status.innerText = `${data.photos.length} photos added`;
+            if(data.photos.length === 0) { container.innerHTML = ''; return; }
+            container.innerHTML = data.photos.map((photo, idx) => `
+                <div class="photo-thumb">
+                    <img src="${photo}" alt="Memory">
+                    <button onclick="deletePhoto(${idx})" class="photo-del-btn">✕</button>
+                </div>
+            `).join('');
+        }
+
+        function deletePhoto(idx) {
+            const data = getCurrentDayData();
+            data.photos.splice(idx, 1);
+            saveCurrentDayData();
+            loadDayUI();
+        }
+
+        // To-Do
+        function renderTodos() {
+            const data = getCurrentDayData();
+            const container = document.getElementById('todo-container');
+            container.innerHTML = data.todos.map((t, idx) => `
+                <div class="list-row">
+                    <label class="checkbox-label">
+                        <input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTodo(${idx})">
+                        <span class="${t.done ? 'done-text' : ''}">${t.text}</span>
+                    </label>
+                    <button onclick="deleteTodo(${idx})" class="row-del-btn">✕</button>
+                </div>
+            `).join('');
+        }
+        function addTodo() {
+            const input = document.getElementById('todo-input');
+            if(!input.value.trim()) return;
+            const data = getCurrentDayData();
+            data.todos.push({ text: input.value, done: false });
+            input.value = '';
+            saveCurrentDayData();
+            renderTodos();
+        }
+        function toggleTodo(idx) {
+            const data = getCurrentDayData();
+            data.todos[idx].done = !data.todos[idx].done;
+            saveCurrentDayData();
+            renderTodos();
+        }
+        function deleteTodo(idx) {
+            const data = getCurrentDayData();
+            data.todos.splice(idx, 1);
+            saveCurrentDayData();
+            renderTodos();
+        }
+
+        // Meals
+        document.getElementById('meal-photo-input').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if(file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    currentTempMealPhoto = event.target.result;
+                    document.getElementById('meal-photo-label').innerText = "Added ✓";
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        function renderMeals() {
+            const data = getCurrentDayData();
+            const container = document.getElementById('meal-container');
+            container.innerHTML = data.meals.map((m, idx) => `
+                <div class="list-row">
+                    <div class="meal-info">
+                        ${m.photo ? `<img src="${m.photo}" class="meal-thumb">` : '<span>🍽️</span>'}
+                        <span class="truncate-text">${m.text}</span>
+                    </div>
+                    <button onclick="deleteMeal(${idx})" class="row-del-btn">✕</button>
+                </div>
+            `).join('');
+        }
+        function addMeal() {
+            const input = document.getElementById('meal-input');
+            if(!input.value.trim() && !currentTempMealPhoto) return;
+            const data = getCurrentDayData();
+            data.meals.push({ text: input.value || 'Meal Photo', photo: currentTempMealPhoto });
+            input.value = '';
+            currentTempMealPhoto = '';
+            document.getElementById('meal-photo-label').innerText = "Photo";
+            document.getElementById('meal-photo-input').value = '';
+            saveCurrentDayData();
+            renderMeals();
+        }
+        function deleteMeal(idx) {
+            const data = getCurrentDayData();
+            data.meals.splice(idx, 1);
+            saveCurrentDayData();
+            renderMeals();
+        }
+
+        // Podcasts
+        function renderPodcasts() {
+            const data = getCurrentDayData();
+            const container = document.getElementById('podcast-container');
+            container.innerHTML = data.podcasts.map((p, idx) => `
+                <div class="list-row">
+                    <span class="truncate-text">🎧 ${p}</span>
+                    <button onclick="deletePodcast(${idx})" class="row-del-btn">✕</button>
+                </div>
+            `).join('');
+        }
+        function addPodcast() {
+            const input = document.getElementById('podcast-input');
+            if(!input.value.trim()) return;
+            const data = getCurrentDayData();
+            data.podcasts.push(input.value);
+            input.value = '';
+            saveCurrentDayData();
+            renderPodcasts();
+        }
+        function deletePodcast(idx) {
+            const data = getCurrentDayData();
+            data.podcasts.splice(idx, 1);
+            saveCurrentDayData();
+            renderPodcasts();
+        }
+
+        // Books
+        function handleBookCoverUpload(e) {
+            const file = e.target.files[0];
+            if(file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    currentTempBookCover = event.target.result;
+                    const preview = document.getElementById('new-book-cover-preview');
+                    const icon = document.getElementById('new-book-cover-icon');
+                    preview.src = currentTempBookCover;
+                    preview.classList.remove('hidden');
+                    icon.classList.add('hidden');
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function setBookRating(rating) {
+            currentBookRating = rating;
+            document.querySelectorAll('.star-btn').forEach(btn => {
+                const val = parseInt(btn.dataset.val);
+                btn.classList.toggle('active', val <= rating);
+            });
+        }
+
+        function openBookModal() {
+            editingBookId = null;
+            currentTempBookCover = '';
+            currentBookRating = 5;
+            setBookRating(5);
+            document.getElementById('book-modal-title').innerText = "Add Book & Cover Photo";
+            document.getElementById('new-book-cover-preview').classList.add('hidden');
+            document.getElementById('new-book-cover-icon').classList.remove('hidden');
+            document.getElementById('book-title').value = '';
+            document.getElementById('book-author').value = '';
+            document.getElementById('book-notes').value = '';
+            document.getElementById('book-modal').classList.remove('hidden');
+        }
+
+        function openEditBookModalFromDetail() {
+            closeBookDetailModal();
+            const book = booksDb.find(b => b.id === activeDetailBookId);
+            if(!book) return;
+            editingBookId = book.id;
+            currentTempBookCover = book.cover || '';
+            currentBookRating = book.rating || 5;
+            setBookRating(currentBookRating);
+            document.getElementById('book-modal-title').innerText = "Edit Book Details ✏️";
+            document.getElementById('book-title').value = book.title || '';
+            document.getElementById('book-author').value = book.author || '';
+            document.getElementById('book-notes').value = book.notes || '';
+            const preview = document.getElementById('new-book-cover-preview');
+            const icon = document.getElementById('new-book-cover-icon');
+            if (book.cover) {
+                preview.src = book.cover;
+                preview.classList.remove('hidden');
+                icon.classList.add('hidden');
+            } else {
+                preview.classList.add('hidden');
+                icon.classList.remove('hidden');
+            }
+            document.getElementById('book-modal').classList.remove('hidden');
+        }
+
+        function closeBookModal() { document.getElementById('book-modal').classList.add('hidden'); }
+        function saveBook() {
+            const title = document.getElementById('book-title').value;
+            const author = document.getElementById('book-author').value;
+            const notes = document.getElementById('book-notes').value;
+            if(!title.trim()) return;
+            if (editingBookId) {
+                const bIdx = booksDb.findIndex(b => b.id === editingBookId);
+                if (bIdx !== -1) {
+                    booksDb[bIdx].title = title;
+                    booksDb[bIdx].author = author;
+                    booksDb[bIdx].notes = notes;
+                    booksDb[bIdx].rating = currentBookRating;
+                    if (currentTempBookCover) booksDb[bIdx].cover = currentTempBookCover;
+                }
+            } else {
+                booksDb.push({ id: Date.now(), title, author, notes, rating: currentBookRating, cover: currentTempBookCover, date: getDateKey() });
+                const data = getCurrentDayData();
+                data.bookTitle = title;
+                saveCurrentDayData();
+            }
+            localStorage.setItem('korea_books_db', JSON.stringify(booksDb));
+            closeBookModal();
+            loadDayUI();
+        }
+
+        function renderTodayBook() {
+            const data = getCurrentDayData();
+            const el = document.getElementById('today-book-text');
+            if(data.bookTitle) el.innerHTML = `📖 <strong>${data.bookTitle}</strong>`;
+            else el.innerText = "No book logged for today.";
+        }
+
+        function renderBooks() {
+            const container = document.getElementById('book-grid');
+            const searchQuery = document.getElementById('book-search-input').value.toLowerCase();
+            const filteredBooks = booksDb.filter(b => 
+                b.title.toLowerCase().includes(searchQuery) || (b.author && b.author.toLowerCase().includes(searchQuery))
+            );
+            document.getElementById('book-count').innerText = `${filteredBooks.length} books`;
+            if(filteredBooks.length === 0) {
+                container.innerHTML = `<p class="empty-shelf-msg">No books found.</p>`;
+                return;
+            }
+            container.innerHTML = filteredBooks.map(b => {
+                const stars = '★'.repeat(b.rating || 5);
+                return `
+                    <div onclick="openBookDetail(${b.id})" class="book-card">
+                        <div class="book-cover-box">
+                            ${b.cover ? `<img src="${b.cover}" class="cover-fill">` : '<span class="book-emoji">📖</span>'}
+                        </div>
+                        <h4 class="book-card-title">${b.title}</h4>
+                        <p class="book-card-author">${b.author || 'Unknown'}</p>
+                        <span class="book-card-stars">${stars}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function openBookDetail(id) {
+            const book = booksDb.find(b => b.id === id);
+            if(!book) return;
+            activeDetailBookId = id;
+            document.getElementById('detail-book-date').innerText = `Read on: ${book.date}`;
+            document.getElementById('detail-book-title').innerText = book.title;
+            document.getElementById('detail-book-author').innerText = book.author ? `by ${book.author}` : '';
+            document.getElementById('detail-book-notes').innerText = book.notes || 'No notes added for this book.';
+            document.getElementById('detail-book-rating').innerText = '★'.repeat(book.rating || 5);
+            const img = document.getElementById('detail-book-img');
+            const icon = document.getElementById('detail-book-icon');
+            if(book.cover) {
+                img.src = book.cover;
+                img.classList.remove('hidden');
+                icon.classList.add('hidden');
+            } else {
+                img.classList.add('hidden');
+                icon.classList.remove('hidden');
+            }
+            document.getElementById('book-detail-modal').classList.remove('hidden');
+        }
+        function closeBookDetailModal() { document.getElementById('book-detail-modal').classList.add('hidden'); }
+        function deleteBookFromDetail() {
+            if(activeDetailBookId) {
+                booksDb = booksDb.filter(b => b.id !== activeDetailBookId);
+                localStorage.setItem('korea_books_db', JSON.stringify(booksDb));
+                closeBookDetailModal();
+                renderBooks();
+            }
+        }
+
+        // Backup & Restore
+        function openBackupModal() { document.getElementById('backup-modal').classList.remove('hidden'); }
+        function closeBackupModal() { document.getElementById('backup-modal').classList.add('hidden'); }
+
+        function exportBackupFile() {
+            const backupData = { userProfile, plannerDb: db, booksDb, exportDate: new Date().toISOString() };
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `haru_planner_backup_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+        }
+
+        function importBackupFile(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    const imported = JSON.parse(event.target.result);
+                    if (imported.plannerDb && imported.booksDb) {
+                        localStorage.setItem('korea_planner_db', JSON.stringify(imported.plannerDb));
+                        localStorage.setItem('korea_books_db', JSON.stringify(imported.booksDb));
+                        if (imported.userProfile) {
+                            localStorage.setItem('korea_user_profile', JSON.stringify(imported.userProfile));
+                            userProfile = imported.userProfile;
+                        }
+                        db = imported.plannerDb;
+                        booksDb = imported.booksDb;
+                        alert("Data successfully restored! ✨");
+                        closeBackupModal();
+                        loadDayUI();
+                    } else {
+                        alert("Invalid backup file format!");
+                    }
+                } catch (err) {
+                    alert("Error reading JSON file.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        loadDayUI();
+    </script>
+</body>
+</html>
