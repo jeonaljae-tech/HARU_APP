@@ -296,6 +296,35 @@ body {
     letter-spacing: 0.05em;
 }
 
+/* Copy Previous Day Button (Cozy Apricot Pill Style) */
+.copy-prev-pill {
+    background: var(--input-bg);
+    border: 1px solid var(--border-card-1);
+    color: var(--c-apricot);
+    font-family: inherit;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    box-shadow: 0 2px 6px rgba(234, 166, 36, 0.14);
+    transition: all 0.2s ease;
+}
+
+.copy-prev-pill:hover {
+    background: var(--c-apricot);
+    color: #FFFFFF;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(234, 166, 36, 0.25);
+}
+
+.copy-prev-pill:active {
+    transform: scale(0.96);
+}
+
 /* Date Bar */
 .date-display-group {
     display: flex;
@@ -681,7 +710,7 @@ body {
     padding: 1rem 0;
 }
 
-.book-card {
+.book-card, .book-card-item {
     background: var(--card-white);
     border: 1.5px solid var(--border-soft);
     border-radius: 18px;
@@ -693,12 +722,12 @@ body {
     transition: transform 0.2s ease, background 0.2s ease;
 }
 
-.book-card:hover {
+.book-card:hover, .book-card-item:hover {
     transform: translateY(-2px);
     background: var(--surface-soft);
 }
 
-.book-cover-box {
+.book-cover-box, .shelf-book-cover {
     width: 76px;
     height: 106px;
     border-radius: 12px;
@@ -721,7 +750,7 @@ body {
     font-size: 1.5rem;
 }
 
-.book-card-title {
+.book-card-title, .shelf-book-title {
     font-size: 0.75rem;
     font-weight: 700;
     text-align: center;
@@ -731,7 +760,7 @@ body {
     text-overflow: ellipsis;
 }
 
-.book-card-author {
+.book-card-author, .shelf-book-author {
     font-size: 0.65rem;
     color: var(--text-muted);
     text-align: center;
