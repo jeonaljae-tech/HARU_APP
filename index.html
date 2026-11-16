@@ -88,17 +88,19 @@
         <!-- 2-Column Bento Grid -->
         <div class="bento-grid">
 
-            <!-- To-Do List -->
+            <!-- To-Do List (With Styled Copy Prev Button) -->
             <section class="bento-card grid-card-1 flex-col-between">
                 <div>
                     <div class="card-header">
                         <span class="card-title text-peach">To-Do List</span>
-                        <i data-lucide="check-circle-2" class="icon-sm text-peach"></i>
+                        <button onclick="copyYesterdayTasks()" class="copy-prev-pill">
+                            ✨ Copy Prev
+                        </button>
                     </div>
                     <div id="todo-container" class="item-list"></div>
                 </div>
                 <div class="inline-add-row">
-                    <input type="text" id="todo-input" placeholder="Add task..." class="soft-input">
+                    <input type="text" id="todo-input" placeholder="Add task..." class="soft-input" onkeypress="if(event.key === 'Enter') addTodo()">
                     <button onclick="addTodo()" class="square-add-btn btn-peach">
                         <i data-lucide="plus" class="icon-xs"></i>
                     </button>
@@ -115,7 +117,7 @@
                     <div id="meal-container" class="item-list"></div>
                 </div>
                 <div class="stack-add-group">
-                    <input type="text" id="meal-input" placeholder="What did you eat?" class="soft-input">
+                    <input type="text" id="meal-input" placeholder="What did you eat?" class="soft-input" onkeypress="if(event.key === 'Enter') addMeal()">
                     <div class="meal-action-row">
                         <label class="mini-upload-btn">
                             <i data-lucide="camera" class="icon-xs"></i>
@@ -137,7 +139,7 @@
                     <div id="podcast-container" class="item-list"></div>
                 </div>
                 <div class="inline-add-row">
-                    <input type="text" id="podcast-input" placeholder="Podcast..." class="soft-input">
+                    <input type="text" id="podcast-input" placeholder="Podcast..." class="soft-input" onkeypress="if(event.key === 'Enter') addPodcast()">
                     <button onclick="addPodcast()" class="square-add-btn btn-periwinkle">
                         <i data-lucide="plus" class="icon-xs"></i>
                     </button>
@@ -176,6 +178,7 @@
 
     </main>
 
+    <!-- Modals (Backup, Book Detail, Book Add/Edit, Profile) -->
     <!-- Backup & Restore Modal -->
     <div id="backup-modal" onclick="if(event.target === this) closeBackupModal()" class="modal-backdrop hidden">
         <div class="modal-box">
@@ -423,6 +426,9 @@
                 db[key] = { memory: '', photos: [], songTitle: '', songArtist: '', todos: [], meals: [], podcasts: [], bookTitle: '' };
             }
             if(!db[key].photos) db[key].photos = [];
+            if(!db[key].todos) db[key].todos = [];
+            if(!db[key].meals) db[key].meals = [];
+            if(!db[key].podcasts) db[key].podcasts = [];
             return db[key];
         }
 
@@ -545,18 +551,44 @@
             renderTodos();
         }
 
-        // Meals
-        document.getElementById('meal-photo-input').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if(file) {
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    currentTempMealPhoto = event.target.result;
-                    document.getElementById('meal-photo-label').innerText = "Added ✓";
-                }
-                reader.readAsDataURL(file);
+        // Copy Previous Day's Tasks Feature
+        function copyYesterdayTasks() {
+            const currentDateStr = getDateKey();
+            let currDateObj = new Date(currentDateStr);
+            currDateObj.setDate(currDateObj.getDate() - 1);
+            
+            const prevDateStr = currDateObj.toISOString().split('T')[0];
+            const prevData = db[prevDateStr];
+
+            if (!prevData || !prevData.todos || prevData.todos.length === 0) {
+                alert("မနေ့က (Previous day) မှာ သိမ်းထားတဲ့ To-do တွေ မရှိသေးပါဘူး!");
+                return;
             }
-        });
+
+            const currentData = getCurrentDayData();
+            const copiedTodos = prevData.todos.map(t => ({ text: t.text, done: false }));
+            currentData.todos = [...currentData.todos, ...copiedTodos];
+            
+            saveCurrentDayData();
+            renderTodos();
+            alert("မနေ့က Task တွေကို ဒီနေ့ဆီ အောင်မြင်စွာ ကူးယူပြီးပါပြီ! ✨");
+        }
+
+        // Meals
+        const mealPhotoInput = document.getElementById('meal-photo-input');
+        if(mealPhotoInput) {
+            mealPhotoInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if(file) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        currentTempMealPhoto = event.target.result;
+                        document.getElementById('meal-photo-label').innerText = "Added ✓";
+                    }
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
 
         function renderMeals() {
             const data = getCurrentDayData();
@@ -579,7 +611,7 @@
             input.value = '';
             currentTempMealPhoto = '';
             document.getElementById('meal-photo-label').innerText = "Photo";
-            document.getElementById('meal-photo-input').value = '';
+            if(document.getElementById('meal-photo-input')) document.getElementById('meal-photo-input').value = '';
             saveCurrentDayData();
             renderMeals();
         }
@@ -617,7 +649,7 @@
             renderPodcasts();
         }
 
-        // Books
+        // Books & Shelf Management
         function handleBookCoverUpload(e) {
             const file = e.target.files[0];
             if(file) {
@@ -656,6 +688,112 @@
             document.getElementById('book-modal').classList.remove('hidden');
         }
 
+        function closeBookModal() { document.getElementById('book-modal').classList.add('hidden'); }
+
+        function saveBook() {
+            const title = document.getElementById('book-title').value.trim();
+            const author = document.getElementById('book-author').value.trim();
+            const notes = document.getElementById('book-notes').value.trim();
+            if(!title) { alert("ကျေးဇူးပြု၍ စာအုပ်နာမည် (Book Title) ထည့်ပါ။"); return; }
+
+            if(editingBookId) {
+                const book = booksDb.find(b => b.id === editingBookId);
+                if(book) {
+                    book.title = title;
+                    book.author = author;
+                    book.notes = notes;
+                    book.rating = currentBookRating;
+                    book.cover = currentTempBookCover || book.cover;
+                }
+            } else {
+                const newBook = {
+                    id: Date.now(),
+                    dateAdded: getDateKey(),
+                    title,
+                    author,
+                    notes,
+                    rating: currentBookRating,
+                    cover: currentTempBookCover
+                };
+                booksDb.unshift(newBook);
+                
+                const dayData = getCurrentDayData();
+                dayData.bookTitle = title;
+            }
+
+            localStorage.setItem('korea_books_db', JSON.stringify(booksDb));
+            saveCurrentDayData();
+            closeBookModal();
+            loadDayUI();
+        }
+
+        function renderTodayBook() {
+            const data = getCurrentDayData();
+            const textEl = document.getElementById('today-book-text');
+            if(data.bookTitle) {
+                textEl.innerText = `📖 ${data.bookTitle}`;
+                textEl.classList.remove('muted-body-text');
+            } else {
+                textEl.innerText = "No book logged for today.";
+                textEl.classList.add('muted-body-text');
+            }
+        }
+
+        function renderBooks() {
+            const grid = document.getElementById('book-grid');
+            const countEl = document.getElementById('book-count');
+            const query = (document.getElementById('book-search-input').value || '').toLowerCase();
+
+            const filtered = booksDb.filter(b => 
+                (b.title && b.title.toLowerCase().includes(query)) || 
+                (b.author && b.author.toLowerCase().includes(query))
+            );
+
+            countEl.innerText = `${booksDb.length} books`;
+
+            if(filtered.length === 0) {
+                grid.innerHTML = `<p class="muted-body-text" style="grid-column: 1/-1; text-align: center; padding: 20px;">No books found in shelf.</p>`;
+                return;
+            }
+
+            grid.innerHTML = filtered.map(b => `
+                <div onclick="openBookDetailModal(${b.id})" class="book-card-item cursor-pointer">
+                    <div class="shelf-book-cover">
+                        ${b.cover ? `<img src="${b.cover}" class="cover-fill">` : '<i data-lucide="book" class="icon-md text-muted"></i>'}
+                    </div>
+                    <h4 class="shelf-book-title">${b.title}</h4>
+                    <p class="shelf-book-author">${b.author || 'Unknown'}</p>
+                </div>
+            `).join('');
+            if(window.lucide) lucide.createIcons();
+        }
+
+        function openBookDetailModal(id) {
+            const book = booksDb.find(b => b.id === id);
+            if(!book) return;
+            activeDetailBookId = id;
+            document.getElementById('detail-book-date').innerText = book.dateAdded || '';
+            const img = document.getElementById('detail-book-img');
+            const icon = document.getElementById('detail-book-icon');
+            if(book.cover) {
+                img.src = book.cover;
+                img.classList.remove('hidden');
+                icon.classList.add('hidden');
+            } else {
+                img.classList.add('hidden');
+                icon.classList.remove('hidden');
+            }
+            document.getElementById('detail-book-title').innerText = book.title;
+            document.getElementById('detail-book-author').innerText = book.author ? `By ${book.author}` : '';
+            
+            const starsContainer = document.getElementById('detail-book-rating');
+            starsContainer.innerHTML = '★'.repeat(book.rating || 5) + '☆'.repeat(5 - (book.rating || 5));
+            
+            document.getElementById('detail-book-notes').innerText = book.notes || 'No notes added.';
+            document.getElementById('book-detail-modal').classList.remove('hidden');
+        }
+        function closeBookDetailModal() { document.getElementById('book-detail-modal').classList.add('hidden'); }
+
         function openEditBookModalFromDetail() {
             closeBookDetailModal();
             const book = booksDb.find(b => b.id === activeDetailBookId);
@@ -681,93 +819,12 @@
             document.getElementById('book-modal').classList.remove('hidden');
         }
 
-        function closeBookModal() { document.getElementById('book-modal').classList.add('hidden'); }
-        function saveBook() {
-            const title = document.getElementById('book-title').value;
-            const author = document.getElementById('book-author').value;
-            const notes = document.getElementById('book-notes').value;
-            if(!title.trim()) return;
-            if (editingBookId) {
-                const bIdx = booksDb.findIndex(b => b.id === editingBookId);
-                if (bIdx !== -1) {
-                    booksDb[bIdx].title = title;
-                    booksDb[bIdx].author = author;
-                    booksDb[bIdx].notes = notes;
-                    booksDb[bIdx].rating = currentBookRating;
-                    if (currentTempBookCover) booksDb[bIdx].cover = currentTempBookCover;
-                }
-            } else {
-                booksDb.push({ id: Date.now(), title, author, notes, rating: currentBookRating, cover: currentTempBookCover, date: getDateKey() });
-                const data = getCurrentDayData();
-                data.bookTitle = title;
-                saveCurrentDayData();
-            }
-            localStorage.setItem('korea_books_db', JSON.stringify(booksDb));
-            closeBookModal();
-            loadDayUI();
-        }
-
-        function renderTodayBook() {
-            const data = getCurrentDayData();
-            const el = document.getElementById('today-book-text');
-            if(data.bookTitle) el.innerHTML = `📖 <strong>${data.bookTitle}</strong>`;
-            else el.innerText = "No book logged for today.";
-        }
-
-        function renderBooks() {
-            const container = document.getElementById('book-grid');
-            const searchQuery = document.getElementById('book-search-input').value.toLowerCase();
-            const filteredBooks = booksDb.filter(b => 
-                b.title.toLowerCase().includes(searchQuery) || (b.author && b.author.toLowerCase().includes(searchQuery))
-            );
-            document.getElementById('book-count').innerText = `${filteredBooks.length} books`;
-            if(filteredBooks.length === 0) {
-                container.innerHTML = `<p class="empty-shelf-msg">No books found.</p>`;
-                return;
-            }
-            container.innerHTML = filteredBooks.map(b => {
-                const stars = '★'.repeat(b.rating || 5);
-                return `
-                    <div onclick="openBookDetail(${b.id})" class="book-card">
-                        <div class="book-cover-box">
-                            ${b.cover ? `<img src="${b.cover}" class="cover-fill">` : '<span class="book-emoji">📖</span>'}
-                        </div>
-                        <h4 class="book-card-title">${b.title}</h4>
-                        <p class="book-card-author">${b.author || 'Unknown'}</p>
-                        <span class="book-card-stars">${stars}</span>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function openBookDetail(id) {
-            const book = booksDb.find(b => b.id === id);
-            if(!book) return;
-            activeDetailBookId = id;
-            document.getElementById('detail-book-date').innerText = `Read on: ${book.date}`;
-            document.getElementById('detail-book-title').innerText = book.title;
-            document.getElementById('detail-book-author').innerText = book.author ? `by ${book.author}` : '';
-            document.getElementById('detail-book-notes').innerText = book.notes || 'No notes added for this book.';
-            document.getElementById('detail-book-rating').innerText = '★'.repeat(book.rating || 5);
-            const img = document.getElementById('detail-book-img');
-            const icon = document.getElementById('detail-book-icon');
-            if(book.cover) {
-                img.src = book.cover;
-                img.classList.remove('hidden');
-                icon.classList.add('hidden');
-            } else {
-                img.classList.add('hidden');
-                icon.classList.remove('hidden');
-            }
-            document.getElementById('book-detail-modal').classList.remove('hidden');
-        }
-        function closeBookDetailModal() { document.getElementById('book-detail-modal').classList.add('hidden'); }
         function deleteBookFromDetail() {
-            if(activeDetailBookId) {
+            if(confirm("ဒီစာအုပ်ကို My Book Shelf ကနေ ဖျက်မှာ သေချာပါသလား?")) {
                 booksDb = booksDb.filter(b => b.id !== activeDetailBookId);
                 localStorage.setItem('korea_books_db', JSON.stringify(booksDb));
                 closeBookDetailModal();
-                renderBooks();
+                loadDayUI();
             }
         }
 
@@ -776,11 +833,16 @@
         function closeBackupModal() { document.getElementById('backup-modal').classList.add('hidden'); }
 
         function exportBackupFile() {
-            const backupData = { userProfile, plannerDb: db, booksDb, exportDate: new Date().toISOString() };
+            const backupData = {
+                profile: userProfile,
+                planner: db,
+                books: booksDb,
+                theme: savedTheme
+            };
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
-            downloadAnchor.setAttribute("download", `haru_planner_backup_${new Date().toISOString().split('T')[0]}.json`);
+            downloadAnchor.setAttribute("download", `haru_bento_backup_${todayStr}.json`);
             document.body.appendChild(downloadAnchor);
             downloadAnchor.click();
             downloadAnchor.remove();
@@ -788,33 +850,38 @@
 
         function importBackupFile(e) {
             const file = e.target.files[0];
-            if (!file) return;
+            if(!file) return;
             const reader = new FileReader();
             reader.onload = function(event) {
                 try {
-                    const imported = JSON.parse(event.target.result);
-                    if (imported.plannerDb && imported.booksDb) {
-                        localStorage.setItem('korea_planner_db', JSON.stringify(imported.plannerDb));
-                        localStorage.setItem('korea_books_db', JSON.stringify(imported.booksDb));
-                        if (imported.userProfile) {
-                            localStorage.setItem('korea_user_profile', JSON.stringify(imported.userProfile));
-                            userProfile = imported.userProfile;
-                        }
-                        db = imported.plannerDb;
-                        booksDb = imported.booksDb;
-                        alert("Data successfully restored! ✨");
-                        closeBackupModal();
-                        loadDayUI();
-                    } else {
-                        alert("Invalid backup file format!");
+                    const parsed = JSON.parse(event.target.result);
+                    if(parsed.planner) {
+                        db = parsed.planner;
+                        localStorage.setItem('korea_planner_db', JSON.stringify(db));
                     }
-                } catch (err) {
-                    alert("Error reading JSON file.");
+                    if(parsed.books) {
+                        booksDb = parsed.books;
+                        localStorage.setItem('korea_books_db', JSON.stringify(booksDb));
+                    }
+                    if(parsed.profile) {
+                        userProfile = parsed.profile;
+                        localStorage.setItem('korea_user_profile', JSON.stringify(userProfile));
+                    }
+                    if(parsed.theme) {
+                        localStorage.setItem('haru_theme_mode', parsed.theme);
+                        applyTheme(parsed.theme);
+                    }
+                    alert("Backup ဖိုင်ကို အောင်မြင်စွာ Restore လုပ်ပြီးပါပြီ! ✨");
+                    closeBackupModal();
+                    loadDayUI();
+                } catch(err) {
+                    alert("Backup ဖိုင် မှားယွင်းနေပါသည်!");
                 }
-            };
+            }
             reader.readAsText(file);
         }
 
+        // Initial Load
         loadDayUI();
     </script>
 </body>
