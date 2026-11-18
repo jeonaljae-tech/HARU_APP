@@ -39,7 +39,7 @@
     <!-- Main Container -->
     <main class="main-container">
 
-        <!-- Minimalist Korean Journal Date Bar -->
+        <!-- Date Bar -->
         <section class="bento-card date-bar">
             <div class="date-display-group">
                 <i data-lucide="calendar" class="icon-sm text-periwinkle"></i>
@@ -88,7 +88,7 @@
         <!-- 2-Column Bento Grid -->
         <div class="bento-grid">
 
-            <!-- To-Do List (With Styled Copy Prev Button) -->
+            <!-- To-Do List -->
             <section class="bento-card grid-card-1 flex-col-between">
                 <div>
                     <div class="card-header">
@@ -178,8 +178,7 @@
 
     </main>
 
-    <!-- Modals (Backup, Book Detail, Book Add/Edit, Profile) -->
-    <!-- Backup & Restore Modal -->
+    <!-- Modals -->
     <div id="backup-modal" onclick="if(event.target === this) closeBackupModal()" class="modal-backdrop hidden">
         <div class="modal-box">
             <div class="modal-header">
@@ -189,7 +188,7 @@
                 </h3>
                 <button onclick="closeBackupModal()" class="close-btn"><i data-lucide="x" class="icon-md"></i></button>
             </div>
-            <p class="modal-desc">သင်၏ Diary မှတ်တမ်းများ၊ ပုံများ၊ စာအုပ်များနှင့် Profile အချက်အလက်အားလုံးကို ဖိုင်ထုတ်ယူသိမ်းဆည်းနိုင်ပြီး၊ ယခင်ထုတ်ထားသောဖိုင်ဖြင့် ပြန်လည်ဖော်ယူနိုင်ပါသည်။</p>
+            <p class="modal-desc">သင်၏ Diary မှတ်တမ်းများ၊ ပုံများ၊ စာအုပ်များနှင့် Profile အချက်အလက်အားလုံးကို သိမ်းဆည်းနိုင်ပါသည်။</p>
             <div class="modal-actions-col">
                 <button onclick="exportBackupFile()" class="full-btn btn-periwinkle flex-center-gap">
                     <i data-lucide="download" class="icon-sm"></i>
@@ -204,7 +203,6 @@
         </div>
     </div>
 
-    <!-- Book Detail Modal -->
     <div id="book-detail-modal" onclick="if(event.target === this) closeBookDetailModal()" class="modal-backdrop hidden">
         <div class="modal-box scrollable-modal">
             <div class="modal-header">
@@ -231,7 +229,6 @@
         </div>
     </div>
 
-    <!-- Add / Edit Book Modal -->
     <div id="book-modal" onclick="if(event.target === this) closeBookModal()" class="modal-backdrop hidden">
         <div class="modal-box scrollable-modal">
             <div class="modal-header">
@@ -260,7 +257,7 @@
                     <button type="button" onclick="setBookRating(5)" class="star-btn active" data-val="5">★</button>
                 </div>
             </div>
-            <textarea id="book-notes" placeholder="Key takeaways / notes from this book..." class="soft-textarea"></textarea>
+            <textarea id="book-notes" placeholder="Key takeaways / notes..." class="soft-textarea"></textarea>
             <div class="two-col-btns">
                 <button onclick="closeBookModal()" class="full-btn btn-soft">Cancel</button>
                 <button onclick="saveBook()" class="full-btn btn-periwinkle">Save Book</button>
@@ -268,7 +265,6 @@
         </div>
     </div>
 
-    <!-- Edit Profile Modal -->
     <div id="profile-modal" onclick="if(event.target === this) closeProfileModal()" class="modal-backdrop hidden">
         <div class="modal-box">
             <div class="modal-header">
@@ -300,7 +296,6 @@
     </div>
 
     <script>
-        // Theme (Light / Night Mode) Management
         function applyTheme(theme) {
             const isDark = theme === 'dark';
             document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
@@ -323,7 +318,6 @@
         const savedTheme = localStorage.getItem('haru_theme_mode') || 'light';
         applyTheme(savedTheme);
 
-        // Close modals with Escape key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 closeBackupModal();
@@ -333,7 +327,6 @@
             }
         });
 
-        // Real-time Clock & Greeting
         function updateClockAndGreeting() {
             const now = new Date();
             const hour = now.getHours();
@@ -346,7 +339,6 @@
         updateClockAndGreeting();
         setInterval(updateClockAndGreeting, 1000);
 
-        // User Profile State
         let userProfile = JSON.parse(localStorage.getItem('korea_user_profile')) || { name: 'Shar Thet Han', avatar: '' };
         let tempAvatar = '';
 
@@ -407,7 +399,6 @@
             closeProfileModal();
         }
 
-        // Date Picker & Journal Management
         const todayStr = new Date().toISOString().split('T')[0];
         document.getElementById('selected-date').value = todayStr;
 
@@ -420,6 +411,7 @@
         let currentBookRating = 5;
 
         function getDateKey() { return document.getElementById('selected-date').value || todayStr; }
+        
         function getCurrentDayData() {
             const key = getDateKey();
             if (!db[key]) {
@@ -477,7 +469,6 @@
             else statusEl.innerText = 'No track logged yet';
         }
 
-        // Photos
         function handleMultipleImages(e) {
             const files = e.target.files;
             if(!files || files.length === 0) return;
@@ -515,7 +506,6 @@
             loadDayUI();
         }
 
-        // To-Do
         function renderTodos() {
             const data = getCurrentDayData();
             const container = document.getElementById('todo-container');
@@ -529,6 +519,7 @@
                 </div>
             `).join('');
         }
+
         function addTodo() {
             const input = document.getElementById('todo-input');
             if(!input.value.trim()) return;
@@ -538,12 +529,14 @@
             saveCurrentDayData();
             renderTodos();
         }
+
         function toggleTodo(idx) {
             const data = getCurrentDayData();
             data.todos[idx].done = !data.todos[idx].done;
             saveCurrentDayData();
             renderTodos();
         }
+
         function deleteTodo(idx) {
             const data = getCurrentDayData();
             data.todos.splice(idx, 1);
@@ -551,30 +544,26 @@
             renderTodos();
         }
 
-        // Copy Previous Day's Tasks Feature
         function copyYesterdayTasks() {
             const currentDateStr = getDateKey();
             let currDateObj = new Date(currentDateStr);
             currDateObj.setDate(currDateObj.getDate() - 1);
-            
             const prevDateStr = currDateObj.toISOString().split('T')[0];
             const prevData = db[prevDateStr];
 
             if (!prevData || !prevData.todos || prevData.todos.length === 0) {
-                alert("မနေ့က (Previous day) မှာ သိမ်းထားတဲ့ To-do တွေ မရှိသေးပါဘူး!");
+                alert("မနေ့က သိမ်းထားတဲ့ To-do တွေ မရှိသေးပါဘူး!");
                 return;
             }
 
             const currentData = getCurrentDayData();
             const copiedTodos = prevData.todos.map(t => ({ text: t.text, done: false }));
             currentData.todos = [...currentData.todos, ...copiedTodos];
-            
             saveCurrentDayData();
             renderTodos();
             alert("မနေ့က Task တွေကို ဒီနေ့ဆီ အောင်မြင်စွာ ကူးယူပြီးပါပြီ! ✨");
         }
 
-        // Meals
         const mealPhotoInput = document.getElementById('meal-photo-input');
         if(mealPhotoInput) {
             mealPhotoInput.addEventListener('change', function(e) {
@@ -603,6 +592,7 @@
                 </div>
             `).join('');
         }
+
         function addMeal() {
             const input = document.getElementById('meal-input');
             if(!input.value.trim() && !currentTempMealPhoto) return;
@@ -615,6 +605,7 @@
             saveCurrentDayData();
             renderMeals();
         }
+
         function deleteMeal(idx) {
             const data = getCurrentDayData();
             data.meals.splice(idx, 1);
@@ -622,7 +613,6 @@
             renderMeals();
         }
 
-        // Podcasts
         function renderPodcasts() {
             const data = getCurrentDayData();
             const container = document.getElementById('podcast-container');
@@ -633,6 +623,7 @@
                 </div>
             `).join('');
         }
+
         function addPodcast() {
             const input = document.getElementById('podcast-input');
             if(!input.value.trim()) return;
@@ -642,6 +633,7 @@
             saveCurrentDayData();
             renderPodcasts();
         }
+
         function deletePodcast(idx) {
             const data = getCurrentDayData();
             data.podcasts.splice(idx, 1);
@@ -649,7 +641,6 @@
             renderPodcasts();
         }
 
-        // Books & Shelf Management
         function handleBookCoverUpload(e) {
             const file = e.target.files[0];
             if(file) {
@@ -694,7 +685,7 @@
             const title = document.getElementById('book-title').value.trim();
             const author = document.getElementById('book-author').value.trim();
             const notes = document.getElementById('book-notes').value.trim();
-            if(!title) { alert("ကျေးဇူးပြု၍ စာအုပ်နာမည် (Book Title) ထည့်ပါ။"); return; }
+            if(!title) { alert("ကျေးဇူးပြု၍ စာအုပ်နာမည် ထည့်ပါ။"); return; }
 
             if(editingBookId) {
                 const book = booksDb.find(b => b.id === editingBookId);
@@ -716,7 +707,6 @@
                     cover: currentTempBookCover
                 };
                 booksDb.unshift(newBook);
-                
                 const dayData = getCurrentDayData();
                 dayData.bookTitle = title;
             }
@@ -743,12 +733,10 @@
             const grid = document.getElementById('book-grid');
             const countEl = document.getElementById('book-count');
             const query = (document.getElementById('book-search-input').value || '').toLowerCase();
-
             const filtered = booksDb.filter(b => 
                 (b.title && b.title.toLowerCase().includes(query)) || 
                 (b.author && b.author.toLowerCase().includes(query))
             );
-
             countEl.innerText = `${booksDb.length} books`;
 
             if(filtered.length === 0) {
@@ -785,13 +773,11 @@
             }
             document.getElementById('detail-book-title').innerText = book.title;
             document.getElementById('detail-book-author').innerText = book.author ? `By ${book.author}` : '';
-            
-            const starsContainer = document.getElementById('detail-book-rating');
-            starsContainer.innerHTML = '★'.repeat(book.rating || 5) + '☆'.repeat(5 - (book.rating || 5));
-            
+            document.getElementById('detail-book-rating').innerHTML = '★'.repeat(book.rating || 5) + '☆'.repeat(5 - (book.rating || 5));
             document.getElementById('detail-book-notes').innerText = book.notes || 'No notes added.';
             document.getElementById('book-detail-modal').classList.remove('hidden');
         }
+
         function closeBookDetailModal() { document.getElementById('book-detail-modal').classList.add('hidden'); }
 
         function openEditBookModalFromDetail() {
@@ -820,7 +806,7 @@
         }
 
         function deleteBookFromDetail() {
-            if(confirm("ဒီစာအုပ်ကို My Book Shelf ကနေ ဖျက်မှာ သေချာပါသလား?")) {
+            if(confirm("ဒီစာအုပ်ကို ဖျက်မှာ သေချာပါသလား?")) {
                 booksDb = booksDb.filter(b => b.id !== activeDetailBookId);
                 localStorage.setItem('korea_books_db', JSON.stringify(booksDb));
                 closeBookDetailModal();
@@ -828,17 +814,11 @@
             }
         }
 
-        // Backup & Restore
         function openBackupModal() { document.getElementById('backup-modal').classList.remove('hidden'); }
         function closeBackupModal() { document.getElementById('backup-modal').classList.add('hidden'); }
 
         function exportBackupFile() {
-            const backupData = {
-                profile: userProfile,
-                planner: db,
-                books: booksDb,
-                theme: savedTheme
-            };
+            const backupData = { profile: userProfile, planner: db, books: booksDb, theme: savedTheme };
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupData, null, 2));
             const downloadAnchor = document.createElement('a');
             downloadAnchor.setAttribute("href", dataStr);
@@ -855,33 +835,18 @@
             reader.onload = function(event) {
                 try {
                     const parsed = JSON.parse(event.target.result);
-                    if(parsed.planner) {
-                        db = parsed.planner;
-                        localStorage.setItem('korea_planner_db', JSON.stringify(db));
-                    }
-                    if(parsed.books) {
-                        booksDb = parsed.books;
-                        localStorage.setItem('korea_books_db', JSON.stringify(booksDb));
-                    }
-                    if(parsed.profile) {
-                        userProfile = parsed.profile;
-                        localStorage.setItem('korea_user_profile', JSON.stringify(userProfile));
-                    }
-                    if(parsed.theme) {
-                        localStorage.setItem('haru_theme_mode', parsed.theme);
-                        applyTheme(parsed.theme);
-                    }
+                    if(parsed.planner) { db = parsed.planner; localStorage.setItem('korea_planner_db', JSON.stringify(db)); }
+                    if(parsed.books) { booksDb = parsed.books; localStorage.setItem('korea_books_db', JSON.stringify(booksDb)); }
+                    if(parsed.profile) { userProfile = parsed.profile; localStorage.setItem('korea_user_profile', JSON.stringify(userProfile)); }
+                    if(parsed.theme) { localStorage.setItem('haru_theme_mode', parsed.theme); applyTheme(parsed.theme); }
                     alert("Backup ဖိုင်ကို အောင်မြင်စွာ Restore လုပ်ပြီးပါပြီ! ✨");
                     closeBackupModal();
                     loadDayUI();
-                } catch(err) {
-                    alert("Backup ဖိုင် မှားယွင်းနေပါသည်!");
-                }
+                } catch(err) { alert("Backup ဖိုင် မှားယွင်းနေပါသည်!"); }
             }
             reader.readAsText(file);
         }
 
-        // Initial Load
         loadDayUI();
     </script>
 </body>
